@@ -61,6 +61,71 @@ def load_image(image: Union[str, "PIL.Image.Image"], timeout: Optional[float] = 
                 image_fin = np.append(image_fin, image_temp, axis=2)
     return image_fin
 
+from pandas import DataFrame, to_datetime
+# import numpy as np
+
+def data_loading(img_path: str = "Core/Images/image_train/images", target_path: str = "Core/Results/Image_mask") -> "DataFrame":
+    """
+    Load and store the Agrocam image and corresponding mask into a structured dataset for training or evaluation.
+
+    This function extracts image paths and corresponding masks and associated metadata, and organizes
+    the data into a structured DataFrame. It also calculates the distance between the top of the
+    trunk and the bottom of the canopy for each image used to calculate the vegetation porosity.
+
+    Parameters
+    ----------
+    img_path : str, optional
+        Path to the directory containing input images. Default is "image".
+    target_path : str, optional
+        Path to the directory containing ground truth masks. Default is "masque_final".
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing image paths, mask paths, conditions (aka treatments), day when the image is taken and calculated distances.
+    """
+    # List all files in the image directory.
+    all_image = os.listdir(img_path + "/")
+    img_data = []
+
+    # Processing each image
+    for i in all_image:
+        # Skip non-image files.
+        if not ((".jpg" in i) or (".png" in i)):
+            continue
+        
+        # Extract camera ID from the filename.
+        id_cam = i.split("_")[0]
+        # Get the treatment for the camera ID.
+        treatment_trad = {"79bt3wkh" : "TVITI", "7s3a5abm" : "AVITI", "4j7g2wk9" : "DVITI"}
+        cond = treatment_trad[id_cam]
+        # Extract date and time from the filename.
+        times = i.split("_")
+
+        # Remove the file extension for mask path construction.
+        i_remove = i.replace(".jpg", "")
+        # Retreiving path
+        img = img_path + '/' + i
+
+        # Constructing data entries
+        all = target_path + "/" + i_remove + "__all.png"
+        l_add = [times[1], times[2], cond, img, all]
+        img_data.append(l_add)
+
+    # Create DataFrame with columns for training data.
+    img_data = DataFrame(
+        img_data,
+        columns=["day", "time", "treatment", "image", 'all']
+        )
+    
+    # Combine day and time into a single datetime column.
+    img_data["day_time"] = img_data["day"] + " " + img_data["time"]
+    img_data['day_time'] = to_datetime(img_data['day_time'], format="%Y-%m-%d %H%M%S")
+    # Drop the separate day and time columns.
+    img_data = img_data.drop(columns=["day", "time"])
+
+    return img_data
+
 def IoU(pred, target, dim_z=0):
     """
     Calculate the Intersection over Union (IoU) score of binary masks for semantic segmentation.
@@ -175,7 +240,7 @@ def k_means_seg(img, c_num=4):
     return lab
 
 from tqdm import tqdm
-import pandas as pd
+from pandas import DataFrame
 # import numpy as np
 import copy
 
@@ -376,13 +441,14 @@ def choose_format(data):
 
 if __name__ == "__main__":
     import argparse
-    import importlib
     
     ## Ask the relevant arguments
     parser = argparse.ArgumentParser(description='Select the variables used for prediction')
-    # Input the path to the csv file with the agronomic characteritics of all the images.
-    parser.add_argument('--train_image_path', type=str, required=False, default="Core/Results/Image_chara_train.csv",
-                        help='Path to the csv file with all the images and their corresponding ground truth mask')
+    # Input the path to the csv file with the agronomic characteritics of ground-truth images.
+    parser.add_argument('--folder_url_train_img', type=str, required=False, default="Core/Images/image_train/images",
+                        help='URL of the folder containing all the images that will be used for segmentation training.')
+    parser.add_argument('--folder_url_train_mask', type=str, required=False, default="Core/Images/image_train/masks",
+                        help='URL of the folder containing all the mask that will be used for segmentation training.')
     # Input the list of format to test
     parser.add_argument('--string_for_list_format', type=str, required=False, default="[RGB,LAB,RGBA,HSV,RGB-LAB,RGB-HSV,LAB-HSV,RGB-LAB-HSV]",
                         help='String which represent the different format to test. The formats must be inputed between brakets [] and seperated with comas , ')
@@ -392,7 +458,8 @@ if __name__ == "__main__":
     
     ## Preparing the database and the format tested
     # Loading the database with the images used
-    data = pd.read_csv(args.train_image_path)
+    data = data_loading(img_path=args.folder_url_train_img,
+                        target_path=args.folder_url_train_mask)
     # Loading the format to test
     format_strings = args.string_for_list_format
     format_list = str.split(format_strings, ",")

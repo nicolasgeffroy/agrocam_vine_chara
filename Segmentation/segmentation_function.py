@@ -68,13 +68,12 @@ def load_image(image: Union[str, "PIL.Image.Image"], timeout: Optional[float] = 
                 image_fin = np.append(image_fin, image_temp, axis=2)
     return image_fin
 
-from pandas import read_csv
 import numpy as np
 from pandas import DataFrame, to_datetime
 # import os
 # import PIL.Image
 
-def data_loading(img_path="image_train/image", target_path="image_train/masque_final", for_train=False, dist_path = None):
+def data_loading(img_path: str = "Core/Images/image_train/images", target_path: str = "Core/Results/Image_mask") -> "DataFrame":
     """
     Load and store the Agrocam image and corresponding mask into a structured dataset for training or evaluation.
 
@@ -88,95 +87,44 @@ def data_loading(img_path="image_train/image", target_path="image_train/masque_f
         Path to the directory containing input images. Default is "image".
     target_path : str, optional
         Path to the directory containing ground truth masks. Default is "masque_final".
-    for_train : bool, optional
-        If True, loads data for training (containing only 'all' mask). If False, loads all individual masks.
-        Default is False.
 
     Returns
     -------
-    img_data : pd.DataFrame
+    pd.DataFrame
         DataFrame containing image paths, mask paths, conditions (aka treatments), day when the image is taken and calculated distances.
     """
-
-    ## Loading metadata and listing images
-    # Read the CSV file containing the metadata for each agrocam.
-    data = read_csv("Segmentation/Liste_Agrocam.csv")
     # List all files in the image directory.
     all_image = os.listdir(img_path + "/")
     img_data = []
 
-    ## Processing each image
+    # Processing each image
     for i in all_image:
         # Skip non-image files.
         if not ((".jpg" in i) or (".png" in i)):
             continue
         
-        ## Retreiving metadata
         # Extract camera ID from the filename.
         id_cam = i.split("_")[0]
         # Get the treatment for the camera ID.
-        cond = data[data["ID Agrocam"] == id_cam][["treatment"]].values[0][0]
+        treatment_trad = {"79bt3wkh" : "TVITI", "7s3a5abm" : "AVITI", "4j7g2wk9" : "DVITI"}
+        cond = treatment_trad[id_cam]
         # Extract date and time from the filename.
         times = i.split("_")
 
-        ## Retreiving paths to the full image as well as masks.
         # Remove the file extension for mask path construction.
         i_remove = i.replace(".jpg", "")
         # Retreiving path
         img = img_path + '/' + i
-        if dist_path:
-            all_mask = dist_path + "/" + i_remove + "__all.png"
-        else:
-            all_mask = target_path + "/" + i_remove + "__all.png"
-        
-        if os.path.exists(all_mask):
-            ## Determining a general distance between the top of the trunk and the sheath for each treatment
-            ## 1. Loading canopy and sheath masks 
-            # Load the image with all the mask
-            all_mask_img = load_image(all_mask, format="L")
-            # Extract the sheath and trunc (with the respective index 3 and 4)
-            sheath_img = (all_mask_img == 3) * 1
-            trunc_img = (all_mask_img == 4) * 1
-            
-            ## 2. Finding the top of the trunk and bottom of the canopy
-            # Sum the values of pixels along the width to locate the width where the mask is.
-            sum_sheath = np.sum(sheath_img, axis=1).reshape(1080)
-            sum_trunc = np.sum(trunc_img, axis=1).reshape(1080)
-            # Initialize variables to track the locations.
-            sup_iter = len(sum_sheath) - 1
-            one_iter_sup, one_iter_trunc = False, False
-            for k in range(len(sum_sheath)):
-                # Find the top of the trunk (first non-zero row encontered when coming from the top).
-                if (sum_trunc[k] != 0) & (not one_iter_trunc):
-                    trunc_loc = k
-                    one_iter_trunc = True
-                # Find the bottom of the canopy (first non-zero row encontered when coming from the bottom).
-                if (sum_sheath[sup_iter] != 0) & (not one_iter_sup):
-                    sup_loc = sup_iter
-                    one_iter_sup = True
-                sup_iter = sup_iter - 1
-                # Exit the loop once both locations are found.
-                if one_iter_sup & one_iter_trunc:
-                    break
-            
-            ## 3. Calculate the distance between the top of the trunk and the bottom of the canopy.
-            dist_sheath_trunc = trunc_loc - sup_loc
-            # If the trunk top is not found, set distance to NaN.
-            if trunc_loc == 0:
-                dist_sheath_trunc = np.nan
-        else :
-            dist_sheath_trunc = np.nan
 
-        ## Constructing data entries
+        # Constructing data entries
         all = target_path + "/" + i_remove + "__all.png"
-        l_add = [id_cam, times[1], times[2], cond, img, all, dist_sheath_trunc]
+        l_add = [times[1], times[2], cond, img, all]
         img_data.append(l_add)
 
-    ## Creating the DataFrame
     # Create DataFrame with columns for training data.
     img_data = DataFrame(
         img_data,
-        columns=["agroCam", "day", "time", "treatment", "image", 'all', 'dist_sheath_trunc']
+        columns=["day", "time", "treatment", "image", 'all']
         )
     
     # Combine day and time into a single datetime column.
@@ -185,88 +133,7 @@ def data_loading(img_path="image_train/image", target_path="image_train/masque_f
     # Drop the separate day and time columns.
     img_data = img_data.drop(columns=["day", "time"])
 
-    ## Finalizing the distance measurement
-    # Replace all the calculated distances with the mean distance per treatment.
-    cat_par = np.unique(img_data['treatment'])
-    mean_dist = img_data.groupby("treatment").mean('dist_sheath_trunc')
-    cat_dist = {m: np.float16(mean_dist.loc[m])[0] for m in cat_par}
-    for cat in cat_dist:
-        if cat_dist[cat] < 0:
-            img_data.loc[img_data["treatment"] == cat, 'dist_sheath_trunc'] = 0
-        else:
-            img_data.loc[img_data["treatment"] == cat, 'dist_sheath_trunc'] = cat_dist[cat]
-
     return img_data
-
-from tqdm import tqdm
-
-def fuse_all(data):
-    """
-    Fuse individual class masks into a single combined mask for each image in the dataset.
-
-    This function processes each row of the input DataFrame, loads the individual masks
-    (leaf, inter-row, sheath, trunk), and combines them into a single mask where each class
-    is represented by a unique integer value. This resulting single mask is saved as a PNG file.
-
-    Parameters
-    ----------
-    data : pandas.DataFrame
-        DataFrame containing paths to individual class masks for each image.
-        In the named columns: 'feuille', 'inter', 'sup', 'trunc', and 'image'.
-
-    Returns
-    -------
-    Images : .png
-        For each Dataframe row (aka original images), a single mask with each classes is returned.
-        It also prints "Finished" upon completion.
-    """
-
-    ## Iterating over each row in the DataFrame
-    for i in tqdm(range(data.shape[0])):
-        ## Loading individual masks
-        # Load the leaf mask and set non-zero pixels to 1.
-        feuille_img = load_image(data.loc[i, 'feuille'], format="L")
-        feuille_img[feuille_img != 0] = 1
-        # Load the inter-row mask and set non-zero pixels to 2.
-        inter_img = load_image(data.loc[i, 'inter'], format="L")
-        inter_img[inter_img != 0] = 2
-        # Load the sheath mask and set non-zero pixels to 3.
-        sheath_img = load_image(data.loc[i, 'sup'], format="L")
-        sheath_img[sheath_img != 0] = 3
-        # Load the trunk mask and set non-zero pixels to 4.
-        trunc_img = load_image(data.loc[i, 'trunc'], format="L")
-        trunc_img[trunc_img != 0] = 4
-
-        ## Combining masks
-        # Add inter-row mask to leaf mask.
-        feuille_img = feuille_img + inter_img
-        feuille_img[feuille_img == 3] = 2  # Correct overlap between leaf and inter-row.
-        # Add sheath mask to the combined mask.
-        feuille_img = feuille_img + sheath_img
-        feuille_img[feuille_img == 4] = 3  # Correct leaf+sheath overlap.
-        feuille_img[feuille_img == 5] = 3  # Correct inter-row+sheath overlap.
-        # Add trunk mask to the combined mask.
-        feuille_img = feuille_img + trunc_img
-        feuille_img[feuille_img == 5] = 4  # Correct leaf+trunk overlap.
-        feuille_img[feuille_img == 6] = 4  # Correct inter-row+trunk overlap.
-        feuille_img[feuille_img == 7] = 4  # Correct sheath+trunk overlap.
-
-        # Reshape the final mask to the original image dimensions.
-        feuille_img = feuille_img.reshape((1080, 1920))
-
-        ## Saving the fused mask
-        # Convert the numpy array to a PIL Image.
-        image = PIL.Image.fromarray(feuille_img, format="L")
-        # Construct the output filename from the original image path.
-        image_file_name = (
-            "masque_final/" +
-            str.removesuffix(str.split(data.loc[i, 'image'], '/')[2], ".jpg") +
-            '__all.png'
-        )
-        # Save the fused mask as a PNG file.
-        image.save(image_file_name)
-
-    return print("Finished")
 
 ## Metrics and Function used for learning
 # Metrics used
@@ -669,7 +536,7 @@ class MSamplesPerClassSampler(Sampler):
 from torch.utils.data import DataLoader
 from torchvision.ops import sigmoid_focal_loss
 from torch.utils.tensorboard import SummaryWriter
-# from tqdm import tqdm
+from tqdm import tqdm
 import os
 
 def train(model, epochs, data, save=True, format=["RGB"]):
@@ -875,9 +742,9 @@ if __name__ == "__main__":
     ## Ask the relevant arguments
     parser = argparse.ArgumentParser(description='Train or Use a segmentation model on a set of images.')
     # Arguments for the generation of the training database
-    parser.add_argument('--folder_url_train_img', type=str, required=False, default="Core/Images/image_train/image",
+    parser.add_argument('--folder_url_train_img', type=str, required=False, default="Core/Images/image_train/images",
                         help='URL of the folder containing images for segmentation or training.')
-    parser.add_argument('--folder_url_train_mask', type=str, required=False, default="Core/Images/image_train/masque_final",
+    parser.add_argument('--folder_url_train_mask', type=str, required=False, default="Core/Images/image_train/masks",
                         help='URL of the folder containing related mask. When training they correspond to ground truth mask and when segmenting, they correspond to predicted mask.')
     parser.add_argument('--train_or_segment', type=str, required=False, default="segment",
                         help='Choose to train an algorithm or use it to segment images.')
@@ -903,14 +770,11 @@ if __name__ == "__main__":
     if args.train_or_segment == "train":
         ## Training Database
         mask_url = args.folder_url_train_mask
-        data = data_loading(img_url, mask_url, for_train=True)
-        data.to_csv("Core/Results/Image_chara_train.csv")
+        data = data_loading(img_url, mask_url)
     else :
         ## Segmentation Database
         mask_url = "Core/Results/Image_mask"
-        maskfordist_url = args.folder_url_train_mask
-        data = data_loading(img_url, mask_url, for_train=True, dist_path=maskfordist_url)
-        data.to_csv("Core/Results/Image_chara_all.csv")
+        data = data_loading(img_url, mask_url)
     
     ## Generate the model and its pretrained weight
     model = lraspp_mobilenet_v3_large(weights=LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1)
@@ -951,14 +815,14 @@ if __name__ == "__main__":
         with torch.no_grad():
             for i in tqdm(range(data.shape[0])):
                 # Load the image
-                img = load_image(data.loc[i, "image"], format = [format_used_list])
+                img = load_image(data.loc[i, "image"], format = format_used_list)
                 img = trans(img)
                 img = torch.unsqueeze(img, 0)
                 # Generate its predicted mask
                 img_mask = model(img)['out'].numpy()
                 img_mask = np.argmax(img_mask[0], axis=0)
                 # Save the mask
-                image = PIL.Image.fromarray(img_mask.astype('uint8'), format="L")
+                image = PIL.Image.fromarray(img_mask.astype('uint8'), mode="L")
                 num_slash = data.loc[i, 'image'].count('/')
                 image_file_name = "Core/Results/Image_mask/" + str.removesuffix(str.split(data.loc[i, 'image'], '/')[num_slash], ".jpg") + '__all.png'
                 image.save(image_file_name)

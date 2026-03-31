@@ -209,3 +209,8 @@ __marimo__/
 
 # Removing the checkpoint folders
 checkpoint
+
+# removing all uv related
+.python-version
+pyproject.toml
+uv.lock
