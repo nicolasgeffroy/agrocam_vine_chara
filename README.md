@@ -134,6 +134,12 @@ bash python -m venv .venv
 .venv/bin/activate # On Windows: venv\Scripts\activate
 ```
 
+Alternatively you can use [uv](https://github.com/astral-sh/uv) :
+
+```bash
+uv venv --python 3.11.9
+```
+
 </details>
 
 <details><summary><b> 3. Download the required package for this repository </b></summary>
@@ -142,6 +148,12 @@ After creating it, we download all the required package for this repository (in 
 
 ```bash
 python -m pip install -r requirements.txt
+```
+
+Alternatively with [uv](https://github.com/astral-sh/uv), you can add all the requiered package with :
+
+```bash
+uv add -r requirements.txt
 ```
 
 **All the package installed:**
@@ -175,6 +187,19 @@ bash python -m venv .venv
 .venv/bin/activate # On Windows: venv\Scripts\activate
 # 3. Download the required package for this repository
 python -m pip install -r requirements.txt
+```
+
+Or with [uv](https://github.com/astral-sh/uv) :
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/nicolasgeffroy/agrocam_agro_chara
+# git clone git@github.com:nicolasgeffroy/agrocam_agro_chara.git
+cd agrocam_agro_chara
+# 2. Create a virtual environment (and use it)
+uv venv --python 3.11.9
+# 3. Download the required package for this repository
+uv add -r requirements.txt
 ```
 
 ### 2️⃣ How to use it
@@ -217,7 +242,8 @@ python <name_folder>/<name_folder>_function.py --<argument> ...
 
 | Arguments | description | Input | Default |
 | :-: | :-: | :-: | :-: |
-|  --\<train_image_path> | URL of the folder containing the images and their corresponding mask for segmentation training  | string | "Core/Results/Image_chara_train.csv" |
+|  --\<folder_url_train_img> | URL to the folder containing the images used for segmentation training  | string | "Core/Images/image_train/images" |
+|  --\<folder_url_train_mask> | URL to the folder containing the mask used for segmentation training  | string | "Core/Images/image_train/masks" |
 |  --\<string_for_list_format> | String representing the list of format to test | string | "[RGB,LAB,RGBA,HSV,RGB-LAB,RGB-HSV,LAB-HSV,RGB-LAB-HSV]" |
 
 <details> <summary><b> Examples </b></summary>
@@ -225,13 +251,13 @@ python <name_folder>/<name_folder>_function.py --<argument> ...
 ```bash
 python Format/choose_img_format_function.py 
 ```
-==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV and some of their combinaison (RGB-LAB,RGB-HSV,LAB-HSV,RGB-LAB-HSV) using the database of images and its mask (*Core/Results/Image_chara_train.csv*)
+==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV and some of their combinaison (RGB-LAB,RGB-HSV,LAB-HSV,RGB-LAB-HSV) using images (*Core/Images/image_train/images*) and their mask (*Core/Images/image_train/masks*) used for segmentation.
 
 ```bash
 python Segmentation/segmentation_function.py 
     --string_for_list_format "[RGB,LAB,RGBA,HSV]"
 ```
-==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV using the database of images and its mask (*Core/Results/Image_chara_train.csv*)
+==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV using images (*Core/Images/image_train/images*) and their mask (*Core/Images/image_train/masks*) used for segmentation.
 
 </details>
 
@@ -283,23 +309,26 @@ python Segmentation/segmentation_function.py
 
 | Arguments | description | Input | Default |
 | :-: | :-: | :-: | :-: |
-|  --\<name_of_database_used> | URL of the csv file containing images, mask and information about it | string | "Core/Results/Image_chara_all.csv" |
+|  --\<folder_url_all_img> | URL to the folder that containing all the images we want to extract agronomic characteristics  | string | "Core/Images/all_image" |
+|  --\<folder_url_all_mask> | URL to the folder that containing all the mask generated during segmentation  | string | "Core/Results/Image_mask" |
+|  --\<folder_url_truth_mask> | URL to the folder containing the mask used for segmentation training. Used for correcting porosity characteristics when using sheath. | string | "Core/Images/image_train/masks" |
 |  --\<name_of_mask_used> | Name of the entity used to determine the upper part of the image (used for the porosity characteristics) | "trunc" or "sheath" | "sheath" |
+|  --\<path_saving> | Path to which the database with all the agronomic characteristics will be saved  | string | "Core/Results/Agro_chara_vine.csv" |
 
 <details> <summary><b> Examples </b></summary>
 
 ```bash
 python Extraction\extraction_function.py
 ```
-==> Generate a database (saved in *Core/Results/Agro_chara_vine.csv*) with for each image in *Core/Results/Image_chara_all.csv* we have their agronomic parameters associated. To determine the porosity, it used the sheath mask to determine the upper zone of the image.
+==> Generate a database (saved in *Core/Results/Agro_chara_vine.csv*) with for each image in *Core/Images/all_image* we have their agronomic parameters using their associated mask in *Core/Results/Image_mask*. To determine the porosity, it uses the sheath mask to determine the upper zone of the image and correct it using the masks in *Core/Images/image_train/masks*.
 
 ```bash
 python Extraction\extraction_function.py 
-    --name_of_database_used "Core/Results/Image_chara_train.csv"
+    --folder_url_all_img "Core/Results/Image_chara_train.csv"
     --name_of_mask_used "trunc"
     --path_saving "Core/Results/Agro_chara_vine_train.csv"
 ```
-==> Generate a database (saved in *Core/Results/Agro_chara_vine_train.csv*) with for each image in *Core/Results/Image_chara_train.csv* we have their agronomic parameters associated. To determine the porosity, it used the trunc mask to determine the upper zone of the image.
+==> Generate a database (saved in *Core/Results/Agro_chara_vine_train.csv*) where for each image in *Core/Images/image_train/images* we have their agronomic parameters using their associated mask in *Core/Results/Image_mask*. To determine the porosity, it uses the trunc mask to determine the upper zone of the image and no correcting is needed.
 </details>
 
 ### Selection 
@@ -398,10 +427,12 @@ prédiction, PE = MobileNetV3 seulement pré-entraîné avec COCO)
 
 You can find what's can/have to be done for this repository (you can also check out the [**Issues**](https://github.com/nicolasgeffroy/agrocam_agro_chara/issues) tab) : 
 
-| Task        | Details           | How can you contribute ? |
-| :-: |:-:| :-:|
-| Intermediate README files      | Adds all the README in the different blocks to detail what does each block (and their functions)  |  |
-| Change where the images are stored and used      | For now, all the images used for this repository are stored in the same repository which can lead to difficulties when pushing or cloning   |  You can either propose ideas and/or code (by [forking](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) and creating a pull request) for the function to do the task. |
+| Task        | Details           |
+| :-: |:-:|
+| Adding a nextflow file      |  |
+| Configure a DockerFile      | Create a container with all the package and the python version and store it in Docker |
+| Intermediate README files      | Adds all the README in the different blocks to detail what does each block (and their functions)  |
+| Change where the images are stored and used      | For now, all the images used for this repository are stored in the same repository which can lead to difficulties when pushing or cloning   |
 
 Make sure the stick as much as possible to the style in which the repository has been written.
 
