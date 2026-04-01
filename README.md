@@ -204,33 +204,15 @@ uv add -r requirements.txt
 
 ### 2️⃣ How to use it
 
-**Each blocks can be called using this following example of line of code :**
+### ⚠️ PREREQUISITE (For Format, Segmentation and Extraction)
+
+For all the mentioned blocks, you will have to download the images and their corresponding masks used for the segmentation training. For this, after downloading [Hugging Face](https://huggingface.co/docs/huggingface_hub/guides/cli), you can type in :
 
 ```bash
-python <name_folder>_function.py --<argument> ...
+hf download nicolasgeffroy/agrocam_vine_chara_segmentation --local-dir Core/Images/image_train --repo-type dataset
 ```
 
----
-
-Just below, is displayed, for each block :
-- **Purpose** => What do they do when called ?
-- *Input =* Which default input do they use ?
-- *Output =* Which output do they provide ?
-
-| Arguments | description | Input |
-| :-: |:-:| :-:|
-|  --\<argument> | Description of the argument | Which input does it take |
-
-<details> <summary><b> Examples of lines of code to use. </b></summary> 
-
-```bash
-python <name_folder>/<name_folder>_function.py --<argument> ...
-```
-==> Description of what does this line of code
-
-</details>
-
----
+This command will retreive all the images and mask from a separate [Hugging Face dataset](https://huggingface.co/datasets/nicolasgeffroy/agrocam_vine_chara_segmentation)
 
 ### Format
 
