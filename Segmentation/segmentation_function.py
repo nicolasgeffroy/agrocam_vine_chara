@@ -73,7 +73,7 @@ from pandas import DataFrame, to_datetime
 # import os
 # import PIL.Image
 
-def data_loading(img_path: str = "Core/Images/image_train/images", target_path: str = "Core/Results/Image_mask") -> "DataFrame":
+def data_loading(img_path: str = "Images/segmentation_images/images", target_path: str = "Results/all_images_mask") -> "DataFrame":
     """
     Load and store the Agrocam image and corresponding mask into a structured dataset for training or evaluation.
 
@@ -117,14 +117,14 @@ def data_loading(img_path: str = "Core/Images/image_train/images", target_path: 
         img = img_path + '/' + i
 
         # Constructing data entries
-        all = target_path + "/" + i_remove + "__all.png"
-        l_add = [times[1], times[2], cond, img, all]
+        mask = target_path + "/" + i_remove + "__mask.png"
+        l_add = [times[1], times[2], cond, img, mask]
         img_data.append(l_add)
 
     # Create DataFrame with columns for training data.
     img_data = DataFrame(
         img_data,
-        columns=["day", "time", "treatment", "image", 'all']
+        columns=["day", "time", "treatment", "image", 'mask']
         )
     
     # Combine day and time into a single datetime column.
@@ -395,7 +395,7 @@ class AgrocamDataset(Dataset):
         image = load_image(self.data.loc[idx, "image"], format=self.format)
         # Load the image representing all the mask in grayscale ("L" format).
         # In this image, each pixels is attributed with a number (0-4) representing a class
-        target = load_image(self.data.loc[idx, "all"], format="L")
+        target = load_image(self.data.loc[idx, "mask"], format="L")
 
         ## Changing the format the maks image so that it can be used by the algorithm
         # This new format assign one binary layer (e.g one binary mask) for each class (4 class + background)
@@ -742,9 +742,9 @@ if __name__ == "__main__":
     ## Ask the relevant arguments
     parser = argparse.ArgumentParser(description='Train or Use a segmentation model on a set of images.')
     # Arguments for the generation of the training database
-    parser.add_argument('--folder_url_train_img', type=str, required=False, default="Core/Images/image_train/images",
+    parser.add_argument('--folder_url_train_img', type=str, required=False, default="Core/Images/segmentation_images/images",
                         help='URL of the folder containing images for segmentation or training.')
-    parser.add_argument('--folder_url_train_mask', type=str, required=False, default="Core/Images/image_train/masks",
+    parser.add_argument('--folder_url_train_mask', type=str, required=False, default="Core/Images/segmentation_images/masks",
                         help='URL of the folder containing related mask. When training they correspond to ground truth mask and when segmenting, they correspond to predicted mask.')
     parser.add_argument('--train_or_segment', type=str, required=False, default="segment",
                         help='Choose to train an algorithm or use it to segment images.')
@@ -773,7 +773,7 @@ if __name__ == "__main__":
         data = data_loading(img_url, mask_url)
     else :
         ## Segmentation Database
-        mask_url = "Core/Results/Image_mask"
+        mask_url = "Core/Results/all_images_mask"
         data = data_loading(img_url, mask_url)
     
     ## Generate the model and its pretrained weight
@@ -824,5 +824,5 @@ if __name__ == "__main__":
                 # Save the mask
                 image = PIL.Image.fromarray(img_mask.astype('uint8'), mode="L")
                 num_slash = data.loc[i, 'image'].count('/')
-                image_file_name = "Core/Results/Image_mask/" + str.removesuffix(str.split(data.loc[i, 'image'], '/')[num_slash], ".jpg") + '__all.png'
+                image_file_name = "Results/all_images_mask/" + str.removesuffix(str.split(data.loc[i, 'image'], '/')[num_slash], ".jpg") + '__mask.png'
                 image.save(image_file_name)

@@ -108,14 +108,14 @@ def data_loading(img_path: str = "Core/Images/image_train/images", target_path: 
         img = img_path + '/' + i
 
         # Constructing data entries
-        all = target_path + "/" + i_remove + "__all.png"
-        l_add = [times[1], times[2], cond, img, all]
+        mask = target_path + "/" + i_remove + "__mask.png"
+        l_add = [times[1], times[2], cond, img, mask]
         img_data.append(l_add)
 
     # Create DataFrame with columns for training data.
     img_data = DataFrame(
         img_data,
-        columns=["day", "time", "treatment", "image", 'all']
+        columns=["day", "time", "treatment", "image", 'mask']
         )
     
     # Combine day and time into a single datetime column.
@@ -259,7 +259,7 @@ def quality_of_cluster_per_format(data, formats_used):
     data : pandas.DataFrame
         DataFrame containing image paths and mask paths with columns:
         - "image": Path to input images
-        - "all": Path to combined mask images (with values 1-4 representing different classes)
+        - "mask": Path to combined mask images (with values 1-4 representing different classes)
     formats_used : list or str
         Color formats to evaluate. Can be:
         - A string like "RGB" or "RGB-LAB" (hyphen-separated for multiple formats)

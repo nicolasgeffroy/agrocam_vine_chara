@@ -110,14 +110,14 @@ def data_loading(img_path: str = "Core/Images/image_train/images", target_path: 
         img = img_path + '/' + i
 
         # Constructing data entries
-        all = target_path + "/" + i_remove + "__all.png"
-        l_add = [times[1], times[2], cond, img, all]
+        mask = target_path + "/" + i_remove + "__mask.png"
+        l_add = [times[1], times[2], cond, img, mask]
         img_data.append(l_add)
 
     # Create DataFrame with columns for training data.
     img_data = DataFrame(
         img_data,
-        columns=["day", "time", "treatment", "image", 'all']
+        columns=["day", "time", "treatment", "image", 'mask']
         )
     
     # Combine day and time into a single datetime column.
@@ -424,10 +424,10 @@ if __name__ == "__main__":
     ## Extracting parameters for each image
     for i in tqdm(range(data.shape[0])):
         
-        all_target = load_image(data.loc[i, "all"], mode=["L"])
+        all_target = load_image(data.loc[i, "mask"], mode=["L"])
         treatment_trad = {"79bt3wkh" : "TVITI", "7s3a5abm" : "AVITI", "4j7g2wk9" : "DVITI"}
         
-        mask_treatment = treatment_trad[data.loc[i, "all"].split("/")[-1].split("_")[0]]
+        mask_treatment = treatment_trad[data.loc[i, "mask"].split("/")[-1].split("_")[0]]
         
         label = ["bck", "feuille", "inter", "sheath", "trunk"]
         all_classes = {i : 0 for i in label if i != "bck"}
