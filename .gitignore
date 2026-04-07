@@ -207,10 +207,15 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# Removing the checkpoint folders
-checkpoint
+# removing the checkpoint folder
+model_checkpoint
 
-# removing all uv related
+# removing the folders and files created by the hugging face repository download
+Images
+Results
+.gitattributes
+
+# removing all uv related files
 .python-version
 pyproject.toml
 uv.lock

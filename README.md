@@ -204,13 +204,19 @@ uv add -r requirements.txt
 
 ### 2️⃣ How to use it
 
-### ⚠️ PREREQUISITE (For Format, Segmentation and Extraction)
+### ⚠️ PREREQUISITE
 
-For all the mentioned blocks, you will have to download the images and their corresponding masks used for the segmentation training. For this, after downloading [Hugging Face](https://huggingface.co/docs/huggingface_hub/guides/cli), you can type in :
+Before using each blocks, you will have to download : 
+- Part of images taken from, roughly, the 01/04/2024 and the 28/08/2024 by the agrocam.
+- All the images and their ground truth masks used for segmentation (reused for other task).
+- The output of the segmentation and extraction blocks using the images mentionned above.
+
+For this, after downloading [Hugging Face](https://huggingface.co/docs/huggingface_hub/guides/cli), you can type in :
 
 ```bash
-hf download nicolasgeffroy/agrocam_vine_chara_segmentation --local-dir Core/Images/image_train --repo-type dataset
+hf download nicolasgeffroy/agrocam_vine_chara --local-dir /agrocam_vine_chara --repo-type dataset --exclude README.md
 ```
+PS: Don't forget to change the *local-dir* variable.
 
 This command will retreive all the images and mask from a separate [Hugging Face dataset](https://huggingface.co/datasets/nicolasgeffroy/agrocam_vine_chara_segmentation)
 
