@@ -333,22 +333,18 @@ def select_variable(data_all, data_train, dist_func, interact=False):
 
 if __name__ == "__main__":
     import argparse
-    import importlib
     
     ## Ask the relevant arguments
     parser = argparse.ArgumentParser(description='Select the variables used for prediction')
     # Input the path to the csv file with the agronomic characteritics of all the images.
-    parser.add_argument('--agro_chara_all', type=str, required=False, default="Core/Results/Agro_chara_vine.csv",
+    parser.add_argument('--agro_chara_all', type=str, required=False, default="Results/all_images_vine_chara.csv",
                         help='Path to the csv file with the agronomic characteritics of all the images where the variable are selected')
     # Input the path to the csv file with the agronomic characteritics of the ground truth images used for training.
-    parser.add_argument('--agro_chara_train', type=str, required=False, default="Core/Results/Agro_chara_vine_train.csv",
+    parser.add_argument('--agro_chara_train', type=str, required=False, default="Results/segmentation_images_vine_chara.csv",
                         help='Path to the csv file with the agronomic characteritics of the trained images used for selecting variables')
     # Distance used to compare each time series.
     parser.add_argument('--dist_func', type=str, required=False, default="dist_manathan",
                         help='Name of the function which calculate the distance used to compare each time series')
-    # Choose the save or not the results for the prediction.
-    parser.add_argument('--save', type=bool, required=False, default=False,
-                        help='If True, saves the results of the function in the "parameters.txt" file for the prediction')
     # Store the parsed arguments
     args = parser.parse_args()
     

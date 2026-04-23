@@ -1,136 +1,7 @@
-## General function
+from utils import load_image, data_loading
 
-import os
-import PIL.Image
-import base64
-import requests
-from io import BytesIO
-from typing import Optional, Union
-
-def load_image(image: Union[str, "PIL.Image.Image"], timeout: Optional[float] = None, mode = ["RGB"]) -> "PIL.Image.Image":
-    # Inspired by https://github.com/huggingface/transformers/blob/main/src/transformers/image_utils.py
-    """
-    Loads `image` to a PIL Image.
-
-    Args:
-        image (`str` or `PIL.Image.Image`):
-            The image to convert to the PIL Image format.
-        timeout (`float`, *optional*):
-            The timeout value in seconds for the URL request.
-        mode ('list'): (added)
-            Image representation space ("RGB", "HSV", "LAB"...)
-
-    Returns:
-        `np.array`: A PIL Image converted in a np.array.
-    """
-    if isinstance(image, str):
-        if image.startswith("http://") or image.startswith("https://"):
-            # We need to actually check for a real protocol, otherwise it's impossible to use a local file
-            # like http_huggingface_co.png
-            image = PIL.Image.open(BytesIO(requests.get(image, timeout=timeout).content))
-        elif os.path.isfile(image):
-            image = PIL.Image.open(image)
-        else:
-            if image.startswith("data:image/"):
-                image = image.split(",")[1]
-
-            # Try to load as base64
-            try:
-                b64 = base64.decodebytes(image.encode())
-                image = PIL.Image.open(BytesIO(b64))
-            except Exception as e:
-                raise ValueError(
-                    f"Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got {image}. Failed with {e}"
-                )
-    elif isinstance(image, PIL.Image.Image):
-        image = image
-    else:
-        raise TypeError(
-            "Incorrect format used for image. Should be an url linking to an image, a base64 string, a local path, or a PIL image."
-        )
-    image = PIL.ImageOps.exif_transpose(image)
-    if len(mode) == 1:
-        image_fin = image.convert(mode[0])
-        image_fin = np.array(image_fin)
-    else :
-        for m in range(len(mode)) :
-            if m==0:
-                image_fin = image.convert(mode[m])
-                image_fin = np.array(image_fin)
-            else:
-                image_temp = image.convert(mode[m])
-                image_temp = np.array(image_temp)
-                image_fin = np.append(image_fin, image_temp, axis=2)
-    return image_fin
-
-from pandas import DataFrame, to_datetime
 import numpy as np
-
-def data_loading(img_path: str = "Core/Images/image_train/images", target_path: str = "Core/Results/Image_mask") -> "DataFrame":
-    """
-    Load and store the Agrocam image and corresponding mask into a structured dataset for training or evaluation.
-
-    This function extracts image paths and corresponding masks and associated metadata, and organizes
-    the data into a structured DataFrame. It also calculates the distance between the top of the
-    trunk and the bottom of the canopy for each image used to calculate the vegetation porosity.
-
-    Parameters
-    ----------
-    img_path : str, optional
-        Path to the directory containing input images. Default is "image".
-    target_path : str, optional
-        Path to the directory containing ground truth masks. Default is "masque_final".
-
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame containing image paths, mask paths, conditions (aka treatments), day when the image is taken and calculated distances.
-    """
-    # List all files in the image directory.
-    all_image = os.listdir(img_path + "/")
-    img_data = []
-
-    # Processing each image
-    for i in all_image:
-        # Skip non-image files.
-        if not ((".jpg" in i) or (".png" in i)):
-            continue
-        
-        # Extract camera ID from the filename.
-        id_cam = i.split("_")[0]
-        # Get the treatment for the camera ID.
-        treatment_trad = {"79bt3wkh" : "TVITI", "7s3a5abm" : "AVITI", "4j7g2wk9" : "DVITI"}
-        cond = treatment_trad[id_cam]
-        # Extract date and time from the filename.
-        times = i.split("_")
-
-        # Remove the file extension for mask path construction.
-        i_remove = i.replace(".jpg", "")
-        # Retreiving path
-        img = img_path + '/' + i
-
-        # Constructing data entries
-        mask = target_path + "/" + i_remove + "__mask.png"
-        l_add = [times[1], times[2], cond, img, mask]
-        img_data.append(l_add)
-
-    # Create DataFrame with columns for training data.
-    img_data = DataFrame(
-        img_data,
-        columns=["day", "time", "treatment", "image", 'mask']
-        )
-    
-    # Combine day and time into a single datetime column.
-    img_data["day_time"] = img_data["day"] + " " + img_data["time"]
-    img_data['day_time'] = to_datetime(img_data['day_time'], format="%Y-%m-%d %H%M%S")
-    # Drop the separate day and time columns.
-    img_data = img_data.drop(columns=["day", "time"])
-
-    return img_data
-
-## Different function used to extract different agronomic characteristics from the vineyard
-
-# import numpy as np
+import os
 
 def height_para(img: np.ndarray) -> float:
     """
@@ -185,8 +56,6 @@ def height_para(img: np.ndarray) -> float:
     # Calculate the height as the difference between the top and bottom width 
     # normalized by the total image width (1080 pixels).
     return round(-(high - low) / 1080, 3)
-
-# import numpy as np
 
 def correcting_porosity_para(all_truth_mask_path: str) -> dict:
     """
@@ -331,8 +200,6 @@ def porosity_para(img_zone: np.ndarray, img_enti: np.ndarray, type_entity: str =
     # Calculate porosity as the ratio of empty space to total upper zone area.
     return round(img_z_e.sum() / img_zone_plus.sum(), 3)
 
-# import numpy as np
-
 def hue_para(ori_img: np.ndarray, img: np.ndarray) -> float:
     """
     Calculate the average hue channel intensity in order to caracterize the leaf color in the canopy 
@@ -378,17 +245,17 @@ if __name__ == "__main__":
     ## Ask the relevant arguments
     parser = argparse.ArgumentParser(description='Train or Use a segmentation model on a set of images.')
     
-    parser.add_argument('--folder_url_all_img', type=str, required=False, default="Core/Images/all_image",
+    parser.add_argument('--folder_url_all_img', type=str, required=False, default="Images/all_images",
                         help='URL of the folder containing all the images we want to extract their caracteristics.')
-    parser.add_argument('--folder_url_all_mask', type=str, required=False, default="Core/Results/Image_mask",
+    parser.add_argument('--folder_url_all_mask', type=str, required=False, default="Results/all_images_mask",
                         help='URL of the folder containing all the mask used for caracteristics extraction.')
     
-    parser.add_argument('--folder_url_truth_mask', type=str, required=False, default="Core/Images/image_train/masks",
+    parser.add_argument('--folder_url_truth_mask', type=str, required=False, default="Images/segmentation_images/masks",
                         help='URL of the folder containing the ground truth mask. Used to correct the porosity measure.')
     
     parser.add_argument('--path_saving', type=str, required=False, 
                         help='Path to which the database will be saved', 
-                        default="Core/Results/Agro_chara_vine.csv")
+                        default="Results/all_images_vine_chara.csv")
     
     parser.add_argument('--name_of_mask_used', type=str, required=False, 
                         help='Name of the entity used to determine the upper part of the image', 
@@ -403,14 +270,14 @@ if __name__ == "__main__":
     type_entity = args.name_of_mask_used
     
     import copy
-    from pandas import DataFrame, to_datetime
+    import pandas as pd
     from tqdm import tqdm
     
     ## Loading and preparing data
     data = data_loading(img_path, target_path)
     # Initialize a DataFrame to store extracted parameters.
-    data['day_time'] = to_datetime(data['day_time'], format="%Y-%m-%d %H:%M:%S")
-    para_agro = DataFrame({
+    data['day_time'] = pd.to_datetime(data['day_time'], format="%Y-%m-%d %H:%M:%S")
+    para_agro = pd.DataFrame({
         "image": data["image"],
         "time": data["day_time"].dt.date,
         "treatment": data["treatment"]

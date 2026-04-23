@@ -1,66 +1,4 @@
-## General function
-import os
-import PIL.Image
-import base64
-import requests
-from io import BytesIO
-from typing import Optional, Union
-
-def load_image(image: Union[str, "PIL.Image.Image"], timeout: Optional[float] = None, mode = ["RGB"]) -> "PIL.Image.Image":
-    # Inspired by https://github.com/huggingface/transformers/blob/main/src/transformers/image_utils.py
-    """
-    Loads `image` to a PIL Image.
-
-    Args:
-        image (`str` or `PIL.Image.Image`):
-            The image to convert to the PIL Image format.
-        timeout (`float`, *optional*):
-            The timeout value in seconds for the URL request.
-        mode ('list'): (added)
-            Image representation space ("RGB", "HSV", "LAB"...)
-
-    Returns:
-        `np.array`: A PIL Image converted in a np.array.
-    """
-    if isinstance(image, str):
-        if image.startswith("http://") or image.startswith("https://"):
-            # We need to actually check for a real protocol, otherwise it's impossible to use a local file
-            # like http_huggingface_co.png
-            image = PIL.Image.open(BytesIO(requests.get(image, timeout=timeout).content))
-        elif os.path.isfile(image):
-            image = PIL.Image.open(image)
-        else:
-            if image.startswith("data:image/"):
-                image = image.split(",")[1]
-
-            # Try to load as base64
-            try:
-                b64 = base64.decodebytes(image.encode())
-                image = PIL.Image.open(BytesIO(b64))
-            except Exception as e:
-                raise ValueError(
-                    f"Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got {image}. Failed with {e}"
-                )
-    elif isinstance(image, PIL.Image.Image):
-        image = image
-    else:
-        raise TypeError(
-            "Incorrect format used for image. Should be an url linking to an image, a base64 string, a local path, or a PIL image."
-        )
-    image = PIL.ImageOps.exif_transpose(image)
-    if len(mode) == 1:
-        image_fin = image.convert(mode[0])
-        image_fin = np.array(image_fin)
-    else :
-        for m in range(len(mode)) :
-            if m==0:
-                image_fin = image.convert(mode[m])
-                image_fin = np.array(image_fin)
-            else:
-                image_temp = image.convert(mode[m])
-                image_temp = np.array(image_temp)
-                image_fin = np.append(image_fin, image_temp, axis=2)
-    return image_fin
+from utils import load_image
 
 import random as rand
 from datetime import timedelta
@@ -903,12 +841,16 @@ if __name__ == "__main__":
     
     ## Ask the relevant arguments
     parser = argparse.ArgumentParser(description='Train or Use a prediction model for vineyard agronomic characteristics from a set of images.')
-    parser.add_argument('--lstm_model', type=str, required=False, default="model.cnn_lstm.CNN_LSTM",
+    parser.add_argument('--lstm_model', type=str, required=False, default="Model.prediction.cnn_lstm.CNN_LSTM",
                         help='Class (in the designated package) of the LSTM used as a prediction model')
+    parser.add_argument('--agro_chara_all', type=str, required=False, default="Results/all_images_vine_chara.csv",
+                        help='URL to the csv file with the agronomic characteritics of all the images')
+    
     parser.add_argument('--weight_url_cnn', type=str, required=False, default="No_weight",
                         help='Import weight of the cnn model. If given "No_weight", pretrained weights for MobileNetV3 are used')
-    parser.add_argument('--weight_url_lstm', type=str, required=False, default="Prediction/checkpoint/MobileNet3_LSTM_checkpoint_final_hsv_notbi_norm.pth",
+    parser.add_argument('--weight_url_lstm', type=str, required=False, default="Results/model_checkpoint/prediction_model_checkpoint/MobileNet3_LSTM_checkpoint_final_hsv_notbi_norm.pth",
                         help='Import weight of the lstm model.')
+    
     parser.add_argument('--train_or_predict', type=str, required=False, 
                         help='Choose to train an algorithm or use it to predict agronomic characteristics', default="predict")
     parser.add_argument('--chara_chosen', type=str, required=False, 
@@ -924,7 +866,7 @@ if __name__ == "__main__":
     # Store the parsed arguments
     args = parser.parse_args()
     
-    from model.mobilenet_LRASPP import LRASPP_MobileNet_V3_Large_Weights, lraspp_mobilenet_v3_large
+    from Model.prediction.mobilenet_LRASPP import LRASPP_MobileNet_V3_Large_Weights, lraspp_mobilenet_v3_large
     
     ## Prepare the images and model
     # Loading the format to test
@@ -933,7 +875,7 @@ if __name__ == "__main__":
     format_list[0] = format_list[0][1:]
     format_list[-1] = format_list[-1][0:-1]
     # Generate the database for all the images and characteristics
-    data = pd.read_csv("Core/Results/Agro_chara_vine.csv")
+    data = pd.read_csv(args.agro_chara_all)
     # Generate the model and its pretrained weight
     if args.lstm_model != "no_CNN_LSTM":
         # If the model chosen is an hybrid between CNN and LSTM, the cnn model is loaded
