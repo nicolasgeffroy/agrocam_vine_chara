@@ -17,25 +17,26 @@ The **agronomic characteristics** extracted from the images and forecasted for 1
 
 ## 📜 Table of Contents
 
-1. [Pipeline Overview](##Pipeline%20Overview)
-2. [Repository Organization](##Repository%20Organization)
-3. [Installation and usage](##Installation%20and%20usage)
-    1. [Initializing](###Initializing)
-    2. [How to use it](###How%20to%20use%20it)
-        1. [Format](###Format)
-        1. [Segmentation](###Segmentation)
-        2. [Extraction](###Extraction)
-        3. [Selection](###Selection)
-        4. [Prediction](###Prediction)
-4. [Pretrained model weight](##Pretrained%20model%20weight)  
-5. [Model Evaluation](##Model%20Evaluation)  
-6. [How to contribute ?](##How%20to%20contribute%20?)  
-7. [License](##License)  
-8. [Citation](##Citation)
+1. [Pipeline Overview](#pipeline-overview)
+2. [Repository Organization](#repository-organization)
+3. [Installation and usage](#installation-and-usage)
+    1. [Initializing](#initializing)
+    2. [How to use it](#how-to-use-it)
+        1. [Format](#format)
+        1. [Segmentation](#segmentation)
+        2. [Extraction](#extraction)
+        3. [Selection](#selection)
+        4. [Prediction](#prediction)
+4. [Pretrained model weight](#pretrained-model-weight)  
+5. [Model Evaluation](#model-evaluation)  
+6. [How to contribute ?](#how-to-contribute-?)  
+7. [License](#license)
+8. [Citation](#citation)
 
 ## ⚙️ Pipeline Overview
 
-This pipeline aims at **extracting and predicting agronomic parameters from vineyard images in real condition**. For that, it has been seperated into 4 main steps :
+This pipeline aims at **extracting and predicting agronomic parameters from vineyard images in real condition**. For that, it has been seperated into 5 main steps :
+- Determine the **image format** used during the segmentation of images
 - **Segmentation** of vineyard images into semantic zones (leaves, trunk, inter-row, irrigation sheath)
 - **Extraction** of agronomics characteristics using those semantic zones
 - **Selection** of those characteristics so that it's coherent with scientific knowledge
@@ -43,61 +44,33 @@ This pipeline aims at **extracting and predicting agronomic parameters from vine
 
 ## 🔎 Repository Organization
 
-This pipeline is composed of 1 common block (*Core*) 4 *almost* self-sufficient block (*Segmentation*, *Extraction*, *Selection* and *Prediction*) :
+This pipeline is composed of 1 common file (*Core*) 4 *almost* self-sufficient file (*Segmentation*, *Extraction*, *Selection* and *Prediction*) :
 
-| Folder | Content |
+| File | Content |
 |:-:|:-:|
-| [Core](https://github.com/nicolasgeffroy/agrocam_agro_chara/Core) | Contains an **example of an image database and intermediate results** which can be directly used by pipeline blocks. It is also where **output of each blocks as stored**. |
-| [Format](https://github.com/nicolasgeffroy/agrocam_agro_chara/Format) | Contains all the functions which goal is to **determine the best image format to use for its [Segmentation](https://github.com/nicolasgeffroy/agrocam_agro_chara/Segmentation)** |
-| [Segmentation](https://github.com/nicolasgeffroy/agrocam_agro_chara/Segmentation) | Contains all the function to summarize the **images into a dataset**, use them to **train a model (MobileNetv3 or DeepLabv3) for segmentation** and use this trained model. It also contains the function used to **determine the image format used for learning**. |
-| [Extraction](https://github.com/nicolasgeffroy/agrocam_agro_chara/Extraction) | Contains all the functions which **uses the mask generated** by the [Segmentation](https://github.com/nicolasgeffroy/agrocam_agro_chara/Segmentation) (highlighting different ZOI) to **extract different agronomic characteristics** of images. |
-| [Selection](https://github.com/nicolasgeffroy/agrocam_agro_chara/Selection) | Contains all the function which **uses the [extracted](https://github.com/nicolasgeffroy/agrocam_agro_chara/Extraction) agronomic characteristics** of each images to select the characteristics which **best represent agronomic reality**. |
-| [Prediction](https://github.com/nicolasgeffroy/agrocam_agro_chara/Prediction) | Contains all the function which **trains a model (LSTM or CNN-LSTM hybrid) to predict**, using temporal series of vineyards images, **vineyard's futur characteristics** as well as function using the trained model. |
+| [0_image_format_function](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/0_image_format_function.py) | Contains all the functions which goal is to **determine the best image format to use for its [Segmentation](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py)** |
+| [1_segmentation_function](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py) | Contains all the function to summarize the **images into a dataset**, use them to **train a model (MobileNetv3 or DeepLabv3) for segmentation** and use this trained model. It also contains the function used to **determine the image format used for learning**. |
+| [Extraction](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/2_extraction_function.py) | Contains all the functions which **uses the mask generated** by the [Segmentation](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py) (highlighting different ZOI) to **extract different agronomic characteristics** of images. |
+| [Selection](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/3_selection_function.py) | Contains all the function which **uses the [extracted](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/2_extraction_function.py) agronomic characteristics** of each images to select the characteristics which **best represent agronomic reality**. |
+| [Prediction](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/4_prediction_function.py) | Contains all the function which **trains a model (LSTM or CNN-LSTM hybrid) to predict**, using temporal series of vineyards images, **vineyard's futur characteristics** as well as function using the trained model. |
 
 <details><summary><b> Diagram </b></summary>
 
 ```graphql
 agrocam_agro_chara/
-├── Core/
-│   ├── Images/
-│   |   ├── all_image
-|   |   └── image_train
-│   ├── Results/
-|   |   ├── Image_mask/
-|   |   ├── Agro_chara_vine.csv
-|   |   ├── Agro_chara_vine_train.csv
-|   |   ├── Image_chara_all.csv
-|   |   └── Image_chara_train.csv
-│   └── README.md
-├── Format/
-│   ├── choose_img_format_function.py
-│   ├── requirements.txt
-│   └── README.md
-├── Segmentation/
-│   ├── format_choice/
-│   │   ├── Image_chara_all.csv
-│   │   └── k_means_seg.ipynb
-│   ├── Liste_Agrocam.csv
-│   ├── segmentation_function.py
-│   ├── requirements.txt
-│   └── README.md
-├── Extraction/
-│   ├── extraction_function.py
-│   ├── requirements.txt
-│   └── README.md
-├── Selection/
-│   ├── segmentation_function.py
-│   ├── requirements.txt
-│   └── README.md
-├── Prediction/
-│   ├── model/
+├── Model/              # Model use for training
+│   ├── prediction/             # Model for prediction
 │   |   ├── cnn_lstm.py
-│   |   └── mobilenet_LRASPP.py
-│   ├── prediction_function.py
-│   ├── requirements.txt
-│   └── README.md
-├── .gitignore
-├── requirements.txt
+|   |   └── mobilenet_LRASPP.py
+│   ├── segmentation/           # Model for segmentation
+├── .gitignore          # Files and folder ignored when commiting
+├── 0_image_format_function.py   # 0_..._function.py
+├── 1_segmentation_function.py   # => Each files represent
+├── 2_extraction_function.py     # one step of the pipeline
+├── 3_selection_function.py
+├── 4_prediction_function.py
+├── requirements.txt    # All the packages needed
+├── utils.py            # All the shared function between files
 └── README.md
 ```
 
@@ -206,46 +179,44 @@ uv add -r requirements.txt
 
 ### ⚠️ PREREQUISITE
 
-Before using each blocks, you will have to download : 
+Before using each files, you will have to download : 
 - Part of images taken from, roughly, the 01/04/2024 and the 28/08/2024 by the agrocam.
 - All the images and their ground truth masks used for segmentation (reused for other task).
-- The output of the segmentation and extraction blocks using the images mentionned above.
+- The output of the segmentation and extraction files using the images mentionned above.
 
 For this, after downloading [Hugging Face](https://huggingface.co/docs/huggingface_hub/guides/cli), you can type in :
 
 ```bash
 hf download nicolasgeffroy/agrocam_vine_chara --local-dir /agrocam_vine_chara --repo-type dataset --exclude README.md
 ```
-PS: Don't forget to change the *local-dir* variable.
+PS: Don't forget to add the root directory to the *local-dir* setting.
 
-This command will retreive all the images and mask from a separate [Hugging Face dataset](https://huggingface.co/datasets/nicolasgeffroy/agrocam_vine_chara_segmentation)
+This command will retreive all the needed images and files from a separate [Hugging Face dataset](https://huggingface.co/datasets/nicolasgeffroy/agrocam_vine_chara)
 
 ### Format
 
-- **Purpose** = Using the k-means algorithm, the block approximate the efficacity of the image segmentation for each image format and proposes a format to use for the segmentation block.
-- *Input =* 
-    - The database representing each image and their ground-truth mask that will be used for the training of the segmentation model  (*Core/Results/Image_chara_train.csv*).
-- *Output =* 
-    - A string displaying the best format to use to segment images.
+- **Purpose** = Using the k-means algorithm, the file approximate the efficacity of the image segmentation for each image format and proposes a format to use for the segmentation file.
+- *Input =* Image and ground truth mask for segmentation training.
+- *Output =* Displays the best format to use to segment images.
 
 | Arguments | description | Input | Default |
 | :-: | :-: | :-: | :-: |
-|  --\<folder_url_train_img> | URL to the folder containing the images used for segmentation training  | string | "Core/Images/image_train/images" |
-|  --\<folder_url_train_mask> | URL to the folder containing the mask used for segmentation training  | string | "Core/Images/image_train/masks" |
+|  --\<folder_url_train_img> | URL to the folder containing the images used for segmentation training  | string | "Images/segmentation_images/images" |
+|  --\<folder_url_train_mask> | URL to the folder containing the mask used for segmentation training  | string | "Images/segmentation_images/masks" |
 |  --\<string_for_list_format> | String representing the list of format to test | string | "[RGB,LAB,RGBA,HSV,RGB-LAB,RGB-HSV,LAB-HSV,RGB-LAB-HSV]" |
 
 <details> <summary><b> Examples </b></summary>
 
 ```bash
-python Format/choose_img_format_function.py 
+python 0_image_format_function.py 
 ```
-==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV and some of their combinaison (RGB-LAB,RGB-HSV,LAB-HSV,RGB-LAB-HSV) using images (*Core/Images/image_train/images*) and their mask (*Core/Images/image_train/masks*) used for segmentation.
+==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV and some of their combinaison (RGB-LAB,RGB-HSV,LAB-HSV,RGB-LAB-HSV) using images (*Images/segmentation_images/masks*) and their mask (*Images/segmentation_images/masks*) used for segmentation.
 
 ```bash
-python Segmentation/segmentation_function.py 
+python 0_image_format_function.py 
     --string_for_list_format "[RGB,LAB,RGBA,HSV]"
 ```
-==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV using images (*Core/Images/image_train/images*) and their mask (*Core/Images/image_train/masks*) used for segmentation.
+==> Determine the best image format to use for the image segmentation model between RGB, LAB, HSV using images (*Images/segmentation_images/masks*) and their mask (*Images/segmentation_images/masks*) used for segmentation.
 
 </details>
 
@@ -253,18 +224,17 @@ python Segmentation/segmentation_function.py
 
 - **Purpose** = Trains a MobileNetv3 model to segment an image into 4 zone of interest : leaf, inter-row, trunc and sheath (**train**) or use a trained model to segment a set of images (**segment**).
 - *Input =* 
-    - (**train**) Image and ground truth mask chosen for training (*Core/image_train*) 
-    - (**segment**) A set of vineyard images (*Core/all_image*) 
+    - (**train**) Images and ground truth masks used for segmentation training
+    - (**segment**) A set of vineyard images taken by AgroCam
 - *Output =* 
-    - A database representing all the images inputed (*Core/Results/Image_chara_train.csv* for **train** or *Core/Results/Image_chara_all.csv* for **segment**)
-    - (**train**) Weight of the trained model (*Segmentation/checkpoint*)
-    - (**segment**) A mask per images (with all the classes) inputed (*Core/Results/Image_mask*)
+    - (**train**) Weight of the segmentation trained model
+    - (**segment**) A mask for each image inputed (with all the classes) 
 
 | Arguments | description | Input | Default |
 | :-: | :-: | :-: | :-: |
-|  --\<folder_url_train_img> | URL of the folder containing input images | string | "Core/Images/image_train/image" |
+|  --\<folder_url_train_img> | URL of the folder containing input images | string | "Images/segmentation_images/images" |
 |  --\<train_or_segment> | Choose to train an algorithm or use a trained one to segment images | "train" or "segment" | "segment" |
-|  --\<folder_url_train_mask> | **training** = Ground-truth mask // **segment** = URL of the folder containing mask for calcultating the distance between trunc and sheath | string | "Core/Images/ image_train/masque_final" |
+|  --\<folder_url_train_mask> | **training** = Ground-truth mask // **segment** = URL of the folder containing mask for calcultating the distance between trunc and sheath | string | "Images/segmentation_images/masks" |
 |  --\<weight_url> | Import weight of the model. If "No_weight" used, [pretrained weights for MobileNetV3](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.segmentation.lraspp_mobilenet_v3_large.html#torchvision.models.segmentation.lraspp_mobilenet_v3_large) are used | string | "No_weight" |
 |  --\<format_used> | Which image format is used (**train**) to train the model or (**segment**) to generate all the associated mask | string | "HSV"
 |  --\<saving> | **train** Decides if the trained weights are saved | bool | True |
@@ -273,87 +243,93 @@ python Segmentation/segmentation_function.py
 <details> <summary><b> Examples </b></summary>
 
 ```bash
-python Segmentation/segmentation_function.py 
-    --weight_url Segmentation/checkpoint/mobileNetv3_checkpoint_focal_HSV.pth 
-    --folder_url_train_img Core/Images/all_image
+python 1_segmentation_function.py 
+    --weight_url Results/model_checkpoint/segmentation_model_checkpoint/mobileNetv3_checkpoint_focal_HSV.pth 
+    --folder_url_train_img Images/all_images
+    --folder_url_train_mask Results/all_images_mask
 ```
-==> **Generate for each images** in *Core/Images/all_image* the **segmentation masks** (in *Core/Results/Image_mask*) using a **MobileNetv3 model trained** with the specified weight (*mobileNetv3_checkpoint_focal_HSV.pth*). It also generate a database (*Core/Results/Image_chara_all.csv*) with all the images used and information about them.
+==> **Generate for each images** in *Images/all_images* a **segmentation masks** (in *Results/all_images_mask*) using a **MobileNetv3 model trained** with the specified weight (*mobileNetv3_checkpoint_focal_HSV.pth*).
 
 ```bash
-python Segmentation/segmentation_function.py 
+python 1_segmentation_function.py 
     --train_or_segment train 
     --epochs 100
     --saving False
     --format_used "HSV-LAB"
 ```
-==> **Train a pretrained MobileNetv3 model** for 100 epocks using training images (*Core/Images/image_train/image*), represented using the combinaison of "HSV" and "LAB" format, and their ground truth mask (*Core/Images/image_train/masque_final*) without saving its weights. It also generate a database (*Core/Results/Image_chara_train.csv*) with all the images used and information about them.
+==> **Train a pretrained MobileNetv3 model** for 100 epocks using training images (*Images/segmentation_images/images*), represented using the combinaison of "HSV" and "LAB" format, and their ground truth mask (*Images/segmentation_images/masks*) without saving its weights.
 
 </details>
 
 ### Extraction
-- **Purpose** = Extracts the different agronomic characteristics from each vineyard images using the different mask generated by the [segmentation](#segmentation) block.
-- *Input =* The database representing each images inputed during [segmentation](#segmentation) (*Core/Results/Image_chara_all.csv*).
-- *Output =* A database with, for each image, all the vineyard's agronomic characteristics (*Core/Results/Agro_chara_vine.csv*)
+- **Purpose** = Extracts the different agronomic characteristics from each vineyard images using the different mask generated by the [segmentation](#segmentation) file.
+- *Input =* 
+    - A set of AgroCam images and their corresponding mask
+    - All the ground truth masks used for segmentation
+- *Output =* A database with, for each image, all the vineyard's agronomic characteristics
 
 | Arguments | description | Input | Default |
 | :-: | :-: | :-: | :-: |
-|  --\<folder_url_all_img> | URL to the folder that containing all the images we want to extract agronomic characteristics  | string | "Core/Images/all_image" |
-|  --\<folder_url_all_mask> | URL to the folder that containing all the mask generated during segmentation  | string | "Core/Results/Image_mask" |
-|  --\<folder_url_truth_mask> | URL to the folder containing the mask used for segmentation training. Used for correcting porosity characteristics when using sheath. | string | "Core/Images/image_train/masks" |
+|  --\<folder_url_all_img> | URL to the folder that containing all the images we want to extract agronomic characteristics  | string | "Images/all_images" |
+|  --\<folder_url_all_mask> | URL to the folder that containing all the mask generated during segmentation  | string | "Results/all_images_mask" |
+|  --\<folder_url_truth_mask> | URL to the folder containing the mask used for segmentation training. Used for correcting porosity characteristics when using sheath. | string | "Images/segmentation_images/masks" |
 |  --\<name_of_mask_used> | Name of the entity used to determine the upper part of the image (used for the porosity characteristics) | "trunc" or "sheath" | "sheath" |
-|  --\<path_saving> | Path to which the database with all the agronomic characteristics will be saved  | string | "Core/Results/Agro_chara_vine.csv" |
+|  --\<path_saving> | Path to which the database with all the agronomic characteristics will be saved  | string | "Results/all_images_vine_chara.csv" |
 
 <details> <summary><b> Examples </b></summary>
 
 ```bash
-python Extraction\extraction_function.py
+python 2_extraction_function.py
 ```
-==> Generate a database (saved in *Core/Results/Agro_chara_vine.csv*) with for each image in *Core/Images/all_image* we have their agronomic parameters using their associated mask in *Core/Results/Image_mask*. To determine the porosity, it uses the sheath mask to determine the upper zone of the image and correct it using the masks in *Core/Images/image_train/masks*.
+==> Generate a database (saved in *Results/all_images_vine_chara.csv*) with for each image in *Images/all_images*, their agronomic parameters using their associated mask in *Results/all_images_mask*. To determine the porosity, it uses the sheath mask to determine the upper zone of the image and correct it using the masks in *Images/segmentation_images/masks*.
 
 ```bash
-python Extraction\extraction_function.py 
-    --folder_url_all_img "Core/Results/Image_chara_train.csv"
+python 2_extraction_function.py 
+    --folder_url_all_img "Images/segmentation_images/images"
+    --folder_url_all_mask "Images/segmentation_images/masks"
     --name_of_mask_used "trunc"
-    --path_saving "Core/Results/Agro_chara_vine_train.csv"
+    --path_saving "Results/segmentation_images_vine_chara.csv"
 ```
-==> Generate a database (saved in *Core/Results/Agro_chara_vine_train.csv*) where for each image in *Core/Images/image_train/images* we have their agronomic parameters using their associated mask in *Core/Results/Image_mask*. To determine the porosity, it uses the trunc mask to determine the upper zone of the image and no correcting is needed.
+==> Generate a database (saved in *Results/segmentation_images_vine_chara.csv*) where for each image in *Images/segmentation_images/images* we have their agronomic parameters using their associated mask in *Images/segmentation_images/masks*. To determine the porosity, it uses the trunc mask to determine the upper zone of the image and no correcting is needed.
 </details>
 
 ### Selection 
 
 - **Purpose** = Select the different agronomic characteristics that will be used for [prediction](#prediction).
-- *Input =* Two databases with one representing each images and their characteristics determined during [extraction](#extraction) (*Core/Results/Image_chara_all.csv*) and the other others the images used in training with their characteristics determined with their ground truth mask (*Core/Results/Image_chara_train.csv*) .
-- *Output =* A message with the characteristics selected and, if save is set to True, those characteristics are written in the file *parameters.txt* located in the [prediction](#prediction) block.
+- *Input =* 
+    - Database with AgroCam images and their agronomic characteristics determined using their genetated mask
+    - Database with AgroCam images used in training with their characteristics determined using their ground truth mask
+- *Output =* Displays the characteristics selected.
 
 | Arguments | description | Input | Default |
 | :-: | :-: | :-: | :-: |
-|  --\<agro_chara_all> | URL to the csv file with the agronomic characteritics of all the images where the variable are selected | string | "Core/Results/Agro_chara_vine.csv" |
-|  --\<agro_chara_train> | URL to the csv file with the agronomic characteritics of the trained images used for selecting variables | string | "Core/Results/Agro_chara_vine_train.csv" |
+|  --\<agro_chara_all> | URL to the csv file with the agronomic characteritics of all the images where the variable are selected | string | "Results/all_images_vine_chara.csv" |
+|  --\<agro_chara_train> | URL to the csv file with the agronomic characteritics of the trained images used for selecting variables | string | "Results/segmentation_images_vine_chara.csv" |
 |  --\<dist_func> | Name of the function which calculate the distance used to compare each time series | string | "dist_manathan" |
-|  --\<save> | If True, saves the results of the function in the "parameters.txt" file for the prediction | bool | False |
 
 <details> <summary><b> Examples </b></summary>
 
 ```bash
-python Selection\selection_function.py
+python 3_selection_function.py
 ```
-==> Prints the variables in *Core/Results/Agro_chara_vine.csv* that must be used for prediction in order to make sure all the treatment can be distinguished and that the values of each treatment in *Core/Results/Agro_chara_vine_train.csv* are close to *Core/Results/Agro_chara_vine.csv*.
+==> Prints the variables in *Results\all_images_vine_chara.csv* that would be used for prediction in order to make sure all the treatment can be distinguished and that the values of each treatment in *Results\segmentation_images_vine_chara.csv* are close to *Results\all_images_vine_chara.csv*.
 
 </details>
 
 ### Prediction 
 
 - **Purpose** => Trains a LSTM or CNN-LSTM model to predict, using 15 last vineyard images, the next 15 days of vineyard agronomic characteristics : canopy porosity and height as well as leaf and interrow hue (**train**) or use a trained model to predict vineyard agronomic characteristics (**predict**).
-- *Input =* Database with images of which we have extracted the vineyards characteristics during [extraction](#extraction) (*Core/Results/Agro_chara_vine.csv*) 
+- *Input =* Database with images of which we have extracted the vineyards characteristics during [extraction](#extraction)
 - *Output =* 
-    - (**train**) Weight of the trained model (*Prediction/checkpoint*)
+    - (**train**) Weight of the trained model
     - (**predict**) Prints the characteristics of the vineyard for the next 15 days.
 
 | Arguments | description | Input | Default |
 | :-: | :-: | :-: | :-: |
-|  --\<lstm_model> | Class (in the designated package) of the LSTM model used as a prediction model | string | "model.cnn_lstm.CNN_LSTM" |
+|  --\<lstm_model> | Class of the LSTM model used as a prediction model | string | "Model.prediction.cnn_lstm.CNN_LSTM" |
+|  --\<agro_chara_all> | URL to the csv file with the agronomic characteritics of all the images | string | "Results/all_images_vine_chara.csv" |
 |  --\<weight_url_cnn> | Import weight of the cnn model used when a CNN-LSTM model is used. If given "No_weight", [pretrained weights for MobileNetV3](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.segmentation.lraspp_mobilenet_v3_large.html#torchvision.models.segmentation.lraspp_mobilenet_v3_large) are used. | string | "No_weight" |
-|  --\<weight_url_lstm> | Import weight of the lstm model. | string | "Prediction/checkpoint/MobileNet3_LSTM _checkpoint_final_hsv_notbi_norm.pth" |
+|  --\<weight_url_lstm> | Import weight of the lstm model. | string | "Results/model_checkpoint/prediction_model_checkpoint/MobileNet3_LSTM _checkpoint_final_hsv_notbi_norm.pth" |
 |  --\<train_or_predict> | Choose to train an algorithm or use it to predict agronomic characteristics | "train" or "predict" | "predict" |
 |  --\<time_start> | **predict** Start date of the 15 image used for prediction | string | "2024-04-20" |
 |  --\<treatment> | Treatment of vine where the images were taken | string | "AVITI" |
@@ -362,27 +338,27 @@ python Selection\selection_function.py
 <details> <summary><b> Examples </b></summary>
 
 ```bash
-python Prediction/prediction_function.py 
-    --lstm_model model.cnn_lstm.CNN_LSTM 
-    --weight_url_cnn Segmentation/checkpoint/mobileNetv3_checkpoint_focal_HSV.pth
-    --weight_url_lstm Prediction/checkpoint/MobileNet3_LSTM_checkpoint_final_hsv_notbi_norm.pth
+python 4_prediction_function 
+    --lstm_model Model.prediction.cnn_lstm.CNN_LSTM 
+    --weight_url_cnn Results/model_checkpoint/prediction_model_checkpoint/mobileNetv3_checkpoint_focal_HSV.pth
+    --weight_url_lstm Results/model_checkpoint/segmentation_model_checkpoint/MobileNet3_LSTM_checkpoint_final_hsv_notbi_norm.pth
 ```
-==> Using the 15 images described in *Core/Results/Agro_chara_vine.csv* that are AVITI vineyards and with the first taken the 2024-04-20, it prints the next vineyard characteristics (lasting from 2024-05-06 to 2024-05-20) predicted by a CNN-LSTM model with the cnn weight ("mobileNetv3_checkpoint_focal_HSV.pth") and the lstm weight ("MobileNet3_LSTM_checkpoint_final_hsv_notbi_norm.pth") given.
+==> Using the 15 images described in *Results/all_images_vine_chara.csv* that are AVITI vineyards and with the first taken the 2024-04-20, it prints the next vineyard characteristics (lasting from 2024-05-06 to 2024-05-20) predicted by a CNN-LSTM model with the cnn weight (*mobileNetv3_checkpoint_focal_HSV.pth*) and the lstm weight (*MobileNet3_LSTM_checkpoint_final_hsv_notbi_norm.pth*) given.
 
 ```bash
-python Prediction/prediction_function.py 
-    --lstm_model model.cnn_lstm.no_CNN_LSTM 
-    --weight_url_lstm Prediction/checkpoint/MobileNet3_LSTM_test_nocnn_checkpoint.pth
+python 4_prediction_function 
+    --lstm_model Model.prediction.cnn_lstm.no_CNN_LSTM 
+    --weight_url_lstm Results/model_checkpoint/prediction_model_checkpoint/MobileNet3_LSTM_test_nocnn_checkpoint.pth
 ```
-==> Using the 15 images described in *Core/Results/Agro_chara_vine.csv* that are the AVITI vineyards and with the first taken the 2024-04-20, it prints the next vineyard characteristics (lasting from 2024-05-06 to 2024-05-20) predicted by a LSTM model with the lstm weight ("MobileNet3_LSTM_test_nocnn_checkpoint.pth") given.
+==> Using the 15 images described in *Results/all_images_vine_chara.csv* that are the AVITI vineyards and with the first taken the 2024-04-20, it prints the next vineyard characteristics (lasting from 2024-05-06 to 2024-05-20) predicted by a LSTM model with the lstm weight (*MobileNet3_LSTM_test_nocnn_checkpoint.pth*) given.
 
 ```bash
-python Prediction/prediction_function.py 
-    --lstm_model model.cnn_lstm.CNN_LSTM 
+python 4_prediction_function 
+    --lstm_model Model.prediction.CNN_LSTM 
     --train_or_predict train
     --epochs 100
 ```
-==> Train a CNN-LSTM model (with a CNN pretrained to COCO) to predict the next 15 vineyard characteristics with 15 prior vineyard images retrieved in *Core/Results/Agro_chara_vine.csv* for 100 epochs.
+==> Train a CNN-LSTM model (with a CNN pretrained to COCO) to predict the next 15 vineyard characteristics with 15 prior vineyard images retrieved in *Results/all_images_vine_chara.csv* for 100 epochs.
 
 </details>
 
@@ -419,8 +395,6 @@ You can find what's can/have to be done for this repository (you can also check 
 | :-: |:-:|
 | Adding a nextflow file      |  |
 | Configure a DockerFile      | Create a container with all the package and the python version and store it in Docker |
-| Intermediate README files      | Adds all the README in the different blocks to detail what does each block (and their functions)  |
-| Change where the images are stored and used      | For now, all the images used for this repository are stored in the same repository which can lead to difficulties when pushing or cloning   |
 
 Make sure the stick as much as possible to the style in which the repository has been written.
 
