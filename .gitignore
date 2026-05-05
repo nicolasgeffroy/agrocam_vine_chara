@@ -217,5 +217,4 @@ Results
 
 # removing all uv related files
 .python-version
-pyproject.toml
 uv.lock

@@ -119,13 +119,13 @@ uv venv --python 3.11.9
 After creating it, we download all the required package for this repository (in the "requirements.txt") in this environment.
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r pyproject.toml
 ```
 
 Alternatively with [uv](https://github.com/astral-sh/uv), you can add all the requiered package with :
 
 ```bash
-uv add -r requirements.txt
+uv pip install -r pyproject.toml
 ```
 
 **All the package installed:**
@@ -158,7 +158,7 @@ cd agrocam_agro_chara
 bash python -m venv .venv 
 .venv/bin/activate # On Windows: venv\Scripts\activate
 # 3. Download the required package for this repository
-python -m pip install -r requirements.txt
+python -m pip install -r pyproject.toml
 ```
 
 Or with [uv](https://github.com/astral-sh/uv) :
@@ -171,7 +171,7 @@ cd agrocam_agro_chara
 # 2. Create a virtual environment (and use it)
 uv venv --python 3.11.9
 # 3. Download the required package for this repository
-uv add -r requirements.txt
+uv pip install -r pyproject.toml
 ```
 
 ### 2️⃣ How to use it
