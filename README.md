@@ -29,9 +29,8 @@ The **agronomic characteristics** extracted from the images and forecasted for 1
         4. [Prediction](#prediction)
 4. [Pretrained model weight](#pretrained-model-weight)  
 5. [Model Evaluation](#model-evaluation)  
-6. [How to contribute ?](#how-to-contribute-?)  
-7. [License](#license)
-8. [Citation](#citation)
+6. [License](#license)
+7. [Citation](#citation)
 
 ## ⚙️ Pipeline Overview
 
