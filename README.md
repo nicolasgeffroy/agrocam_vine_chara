@@ -45,10 +45,10 @@ This pipeline aims at **extracting and predicting agronomic parameters from vine
 
 This pipeline is composed of 1 common file (*Core*) 4 *almost* self-sufficient file (*Segmentation*, *Extraction*, *Selection* and *Prediction*) :
 
-| File | Content |
+| Pipeline Steps | Content |
 |:-:|:-:|
-| [0_image_format_function](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/0_image_format_function.py) | Contains all the functions which goal is to **determine the best image format to use for its [Segmentation](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py)** |
-| [1_segmentation_function](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py) | Contains all the function to summarize the **images into a dataset**, use them to **train a model (MobileNetv3 or DeepLabv3) for segmentation** and use this trained model. It also contains the function used to **determine the image format used for learning**. |
+| [Choose Image Format](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/0_image_format_function.py) | Contains all the functions which goal is to **determine the best image format to use for its [Segmentation](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py)** |
+| [Segmentation](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py) | Contains all the function to summarize the **images into a dataset**, use them to **train a model (MobileNetv3 or DeepLabv3) for segmentation** and use this trained model. It also contains the function used to **determine the image format used for learning**. |
 | [Extraction](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/2_extraction_function.py) | Contains all the functions which **uses the mask generated** by the [Segmentation](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/1_segmentation_function.py) (highlighting different ZOI) to **extract different agronomic characteristics** of images. |
 | [Selection](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/3_selection_function.py) | Contains all the function which **uses the [extracted](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/2_extraction_function.py) agronomic characteristics** of each images to select the characteristics which **best represent agronomic reality**. |
 | [Prediction](https://github.com/nicolasgeffroy/agrocam_vine_chara/blob/main/4_prediction_function.py) | Contains all the function which **trains a model (LSTM or CNN-LSTM hybrid) to predict**, using temporal series of vineyards images, **vineyard's futur characteristics** as well as function using the trained model. |
